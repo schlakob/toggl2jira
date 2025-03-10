@@ -1,7 +1,10 @@
-# Toggl Track Jira Sync
+# toggl2jira
+
+CLI application to replicate toggl time entries to Jira worklogs
 
 ## Install
 
+TODO: Update to pipx/pypi
 1. Clone this repository
 2. Install python requirements `python3 -m pip install -r requirements.txt`
 3. Configure application (see below)
@@ -62,6 +65,6 @@ Configure by setting environment variables or creatng a `.env` file in the scrip
 2. Enable and start LaunchAgent
 
 ```shell
-launchctl bootstrap gui/$(id -u) /Users/jdittrich/Library/LaunchAgents/com.github.schlakob.toggl-jira-sync.plist
+launchctl bootstrap gui/$(id -u) /Users/<user>>/Library/LaunchAgents/com.github.schlakob.toggl-jira-sync.plist
 launchctl kickstart -k gui/$(id -u)/com.github.schlakob.toggl-jira-sync
 ```

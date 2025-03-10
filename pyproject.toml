@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "toggl2jira"
+version = "0.0.0"
+# Version will be overwritten by pipeline
+description = "Replicate toggl time entries to Jira worklogs"
+authors = ["Jakob Schlagenhaufer", "Jan Dittrich"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+requests = "^2.32.3"
+python-dateutil = "^2.9.0.post0"
+python-dotenv = "^1.0.1"
+truststore = "^0.10.1"
+
+[tool.poetry.scripts]
+toggl2jira = "toggl2jira.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
