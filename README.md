@@ -4,11 +4,19 @@ CLI application to replicate toggl time entries to Jira worklogs
 
 ## Install
 
-TODO: Update to pipx/pypi
-1. Clone this repository
-2. Install python requirements `python3 -m pip install -r requirements.txt`
-3. Configure application (see below)
-4. (optional) Setup a regular task to fully automatic sync your tasks
+1. Install toggl2jira from pypi
+
+```shell
+# we recommend pipx to install
+pix install toggl2jira
+
+# otherwise you can install with pip in a virtual environment. YMMV
+python3 -m .venv
+source .venv/bin/activate
+pip install toggl2jira
+```
+2. Configure application (see below)
+3. (optional) Setup a regular task to fully automatic sync your tasks
 
 ## Usage
 
