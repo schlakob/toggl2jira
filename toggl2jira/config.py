@@ -1,10 +1,19 @@
+"""
+Configuration management for toggl2jira.
+"""
+
+from os import environ
+
 import dotenv
-from os import path, environ
 
 
 class Config:
-    def __init__(self, dir: str) -> None:
-        raw_config = {**dotenv.dotenv_values(path.join(dir, ".env")), **environ}
+    """
+    Configuration for toggl2jira loaded from a dotenv file.
+    """
+
+    def __init__(self, config_file: str) -> None:
+        raw_config = {**dotenv.dotenv_values(config_file), **environ}
 
         self.jira_endpoint = raw_config.get("JIRA_URL", "")
         if len(self.jira_endpoint) == 0:

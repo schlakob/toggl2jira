@@ -8,7 +8,7 @@ CLI application to replicate toggl time entries to Jira worklogs
 
 ```shell
 # we recommend pipx to install
-pix install toggl2jira
+pipx install toggl2jira
 
 # otherwise you can install with pip in a virtual environment. YMMV
 python3 -m .venv
@@ -30,7 +30,11 @@ Just run the sync script to sync all time entries within the configured sync win
 
 ## Configuration
 
-Configure by setting environment variables or creatng a `.env` file in the script directory. See `.env.example` for a template.
+Configure by setting environment variables or creating a `toggl2jira.env` file in of the following locations. See `.env.example` for a template.
+
+- Current working directory
+- `~/.config`
+- Location of the script
 
 | Config              | Default                         | Description                                                                                                                           |
 | ------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,8 +61,8 @@ Configure by setting environment variables or creatng a `.env` file in the scrip
     <string>com.github.schlakob.toggl-jira-sync</string>
     <key>ProgramArguments</key>
     <array>
-      <string>/opt/homebrew/bin/python3</string>
-      <string>/path/to/toggl-jira-sync/sync.py</string>
+      <string>/Users/<<user>>/.local/pipx/venvs/toggl2jira/bin/python</string>
+      <string>/Users/<<user>>/.local/bin/toggl2jira</string>
     </array>
     <key>StartInterval</key>
     <integer>3600</integer>
@@ -73,6 +77,6 @@ Configure by setting environment variables or creatng a `.env` file in the scrip
 2. Enable and start LaunchAgent
 
 ```shell
-launchctl bootstrap gui/$(id -u) /Users/<user>>/Library/LaunchAgents/com.github.schlakob.toggl-jira-sync.plist
+launchctl bootstrap gui/$(id -u) /Users/<<user>>/Library/LaunchAgents/com.github.schlakob.toggl-jira-sync.plist
 launchctl kickstart -k gui/$(id -u)/com.github.schlakob.toggl-jira-sync
 ```

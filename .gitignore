@@ -1,8 +1,9 @@
 # app
 .env
+toggl2jira.env
 *.log
 
 # python
-*.pcy
+*.pyc
 __pycache__
 .venv

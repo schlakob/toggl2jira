@@ -1,12 +1,15 @@
-import json
-import sys
-import math
+"""
+Command line interface for toggl2jira.
+"""
+
 import logging
-import re
-from os import path, EX_OK, EX_DATAERR, EX_SOFTWARE, getcwd
+import math
+import sys
 from datetime import date, timedelta
-from dateutil import parser
+from os import EX_DATAERR, EX_OK, EX_SOFTWARE, getcwd, path
+
 import truststore
+from dateutil import parser
 
 from toggl2jira.config import Config
 from toggl2jira.jira import Jira, JiraApi
@@ -14,17 +17,33 @@ from toggl2jira.toggl import Toggl, TogglApi
 
 
 def main():
+    """
+    Main entrypoint for the CLI application.
+    """
+
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     truststore.inject_into_ssl()
     try:
-        config = Config(path.dirname(path.realpath(getcwd())))
+        config_locations = [
+            path.join(getcwd(), "toggl2jira.env"),
+            path.join(path.expanduser("~"), ".config", "toggl2jira.env"),
+            path.join(path.dirname(__file__), "toggl2jira.env"),
+        ]
+
+        config = None
+        for location in config_locations:
+            print(f"checking for config at {location}")
+            if path.exists(location):
+                config = Config(location)
+                break
     except RuntimeError as e:
-        logging.error(f"Could not load config ({e})")
+        logging.error("Could not load config (%s)", e)
         sys.exit(EX_DATAERR)
 
     # setup filters
     logging.info(
-        f"starting sync with window of {config.sync_window_size} days searching for {config.jira_project_slug}"
+        "starting sync with window of %s days searching for %s",
+        config.sync_window_size, config.jira_project_slug
     )
     to_date = date.today() + timedelta(days=1)
     from_date = to_date - timedelta(days=config.sync_window_size)
@@ -36,13 +55,13 @@ def main():
     toggl = Toggl(toggl_api, config.jira_project_slug)
 
     # get jira user information
-    logging.info(f"connecting to jira ({config.jira_endpoint})")
+    logging.info("connecting to jira (%s)", config.jira_endpoint)
     jira_user = jira.get_user()
-    logging.info(f"authenticated as {jira_user['name']}")
+    logging.info("authenticated as %s", jira_user['name'])
 
     # get jira issues with relevant worklogs
     jira_issues = jira.get_issues_by_worklogs(jira_user, from_date, to_date)
-    logging.info(f"found {len(jira_issues)} issues with relevant worklogs")
+    logging.info("found %s issues with relevant worklogs", len(jira_issues))
 
     # get all relevant jira worklogs from issues
     jira_worklogs = []
@@ -55,32 +74,34 @@ def main():
     # filter synced jira worklogs
     jira_worklogs_filtered = list(filter(jira.worklog_filter, jira_worklogs))
     logging.info(
-        f"found {len(jira_worklogs)} worklogs, {len(jira_worklogs_filtered)} of which will be synced"
+        "found %s worklogs, %s of which will be synced",
+        len(jira_worklogs), len(jira_worklogs_filtered)
     )
     for jira_worklog in jira_worklogs_filtered:
         logging.debug(
-            f"jira worklog [{jira_worklog['issueKey']} {jira_worklog['started']} +{jira_worklog['timeSpentSeconds']}s]"
+            "jira worklog [%s %s +%ss]",
+            jira_worklog['issueKey'], jira_worklog['started'], jira_worklog['timeSpentSeconds']
         )
 
     # get toggl user information
-    logging.info(f"connecting to toggl ({config.toggl_endpoint})")
+    logging.info("connecting to toggl (%s)", config.toggl_endpoint)
     toggl_user = toggl.get_user()
-    logging.info(f"authenticated as {toggl_user['email']}")
+    logging.info("authenticated as %s", toggl_user['email'])
 
     # get toggl time entries and convert them to worklogs
     toggl_time_entries = toggl.get_time_entries(from_date, to_date)
-    toggl_worklogs = list(
-        map(lambda te: toggl.convert_time_entry_to_worklog(te), toggl_time_entries)
-    )
+    toggl_worklogs = list(map(toggl.convert_time_entry_to_worklog, toggl_time_entries))
 
     # filter synced toggl worklogs
     toggl_worklogs_filtered = list(filter(toggl.worklog_filter, toggl_worklogs))
     logging.info(
-        f"found {len(toggl_time_entries)} time entries, {len(toggl_worklogs_filtered)} of which will be synced"
+        "found %s time entries, %s of which will be synced",
+        len(toggl_time_entries), len(toggl_worklogs_filtered)
     )
     for worklog in toggl_worklogs_filtered:
         logging.debug(
-            f"toggl worklog [{worklog['issueKey']} {worklog['started']} +{worklog['timeSpentSeconds']}s]"
+            "toggl worklog [%s %s +%ss]",
+            worklog['issueKey'], worklog['started'], worklog['timeSpentSeconds']
         )
 
     # determine worklogs that are already in sync
@@ -103,10 +124,12 @@ def main():
                 break
 
     logging.info(
-        f"{already_synced_count}/{len(toggl_worklogs_filtered)} toggl worklogs are already in sync"
+        "%s/%s toggl worklogs are already in sync",
+        already_synced_count, len(toggl_worklogs_filtered)
     )
     logging.info(
-        f"{len(worklogs_to_add)} jira worklogs to add, {len(worklogs_to_delete)} jira worklogs to delete"
+        "%s jira worklogs to add, %s jira worklogs to delete",
+        len(worklogs_to_add), len(worklogs_to_delete)
     )
 
     total_sync_operations = len(worklogs_to_add) + len(worklogs_to_delete)
@@ -115,24 +138,26 @@ def main():
     # delete worklogs
     for worklog in worklogs_to_delete:
         logging.info(
-            f"delete jira worklog [{worklog['issueKey']} {worklog['started']} +{worklog['timeSpentSeconds']}s]"
+            "delete jira worklog [%s %s +%ss]",
+            worklog['issueKey'], worklog['started'], worklog['timeSpentSeconds']
         )
         try:
             jira.delete_worklog(worklog)
             successful_sync_operations += 1
-        except Exception as e:
-            logging.error(f"failed to delete worklog ({e})")
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("failed to delete worklog (%s)", e)
 
     # add worklogs
     for worklog in worklogs_to_add:
         logging.info(
-            f"add new jira worklog [{worklog['issueKey']} {worklog['started']} +{worklog['timeSpentSeconds']}s]"
+            "add new jira worklog [%s %s +%ss]",
+            worklog['issueKey'], worklog['started'], worklog['timeSpentSeconds']
         )
         try:
             jira.create_worklog(worklog)
             successful_sync_operations += 1
-        except Exception as e:
-            logging.error(f"failed to create worklog ({e})")
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("failed to create worklog (%s)", e)
 
     # status
     if successful_sync_operations == total_sync_operations:
@@ -140,7 +165,8 @@ def main():
         sys.exit(EX_OK)
     else:
         logging.error(
-            f"sync finished with errors. {successful_sync_operations}/{total_sync_operations} sync operations were successful"
+            "sync finished with errors. %s/%s sync operations were successful",
+            successful_sync_operations, total_sync_operations
         )
         sys.exit(EX_SOFTWARE)
 
