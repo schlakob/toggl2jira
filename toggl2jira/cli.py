@@ -34,6 +34,7 @@ def main():
         for location in config_locations:
             if path.exists(location):
                 config = Config(location)
+                logging.info("loaded config from %s", location)
                 break
     except RuntimeError as e:
         logging.error("Could not load config (%s)", e)
