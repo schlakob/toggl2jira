@@ -32,7 +32,6 @@ def main():
 
         config = None
         for location in config_locations:
-            print(f"checking for config at {location}")
             if path.exists(location):
                 config = Config(location)
                 break
